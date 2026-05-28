@@ -1,10 +1,10 @@
-import React, { Suspense, useRef, useEffect } from 'react';
+import React, { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Bounds, Html, useFBX, useTexture, Center, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 
-function RotatingCan({ scrollYProgress }) {
+function RotatingCan({ scrollYProgress, isMobile }) {
   const fbx = useFBX('/monster-ultra-white/source/Monstercan_high.fbx');
 
   const baseColor = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_BaseColo.webp');
@@ -41,19 +41,19 @@ function RotatingCan({ scrollYProgress }) {
       if (scroll < 0.5) {
         // De Sección 1 a Sección 2
         let t = scroll / 0.5; // normalizado de 0 a 1
-        targetX = THREE.MathUtils.lerp(3, -3, t);
-        targetY = -2;
-        targetScale = 1.5;
-        rotX = 0.2;
-        rotZ = -0.1;
+        targetX = isMobile ? 0 : THREE.MathUtils.lerp(3, -3, t);
+        targetY = isMobile ? -4 : -2;
+        targetScale = isMobile ? 1.2 : 1.5;
+        rotX = isMobile ? 0.3 : 0.2;
+        rotZ = isMobile ? 0 : -0.1;
       } else {
         // De Sección 2 a Sección 3
         let t = (scroll - 0.5) / 0.5; // normalizado de 0 a 1
-        targetX = THREE.MathUtils.lerp(-3, 0, t);
-        targetY = THREE.MathUtils.lerp(-2, -4, t); // Baja un poco para centrar el logo al hacer zoom
-        targetScale = THREE.MathUtils.lerp(1.5, 4.0, t); // Zoom brutal
-        rotX = THREE.MathUtils.lerp(0.2, 0, t); // Se endereza
-        rotZ = THREE.MathUtils.lerp(-0.1, 0, t); // Se endereza
+        targetX = isMobile ? 0 : THREE.MathUtils.lerp(-3, 0, t);
+        targetY = isMobile ? THREE.MathUtils.lerp(-4, -1, t) : THREE.MathUtils.lerp(-2, -4, t);
+        targetScale = isMobile ? THREE.MathUtils.lerp(1.2, 2.5, t) : THREE.MathUtils.lerp(1.5, 4.0, t);
+        rotX = isMobile ? THREE.MathUtils.lerp(0.3, 0, t) : THREE.MathUtils.lerp(0.2, 0, t);
+        rotZ = isMobile ? 0 : THREE.MathUtils.lerp(-0.1, 0, t);
       }
 
       // Lógica de Giro (Sólo se detiene cuando llega casi por completo a la Sección 3)
@@ -100,11 +100,19 @@ function RotatingCan({ scrollYProgress }) {
 
 export default function LandingPage() {
   const containerRef = useRef();
+  const [isMobile, setIsMobile] = useState(false);
   
   useEffect(() => {
+    // Detectar si estamos en celular para cambiar el layout y el 3D
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile(); // Evaluar al montar
+    window.addEventListener('resize', checkMobile);
+
     // Activar CSS Scroll Snapping en todo el documento al entrar
     document.documentElement.classList.add('snap-html');
+    
     return () => {
+      window.removeEventListener('resize', checkMobile);
       // Limpiarlo al salir para no afectar otras páginas
       document.documentElement.classList.remove('snap-html');
     };
@@ -140,7 +148,7 @@ export default function LandingPage() {
           <Environment preset="sunset" />
 
           <Suspense fallback={<Html center><div style={{color:'white'}}>Cargando lata...</div></Html>}>
-            <RotatingCan scrollYProgress={scrollYProgress} />
+            <RotatingCan scrollYProgress={scrollYProgress} isMobile={isMobile} />
           </Suspense>
         </Canvas>
       </div>
@@ -148,20 +156,21 @@ export default function LandingPage() {
       {/* Contenido HTML Scrolleable */}
       
       {/* SECCIÓN 1 */}
-      <div className="snap-section" style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+      <div className="snap-section" style={{ height: '100vh', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', position: 'relative', zIndex: 10 }}>
         <motion.div style={{ 
           flex: 1, 
-          padding: '0 8%', 
+          padding: isMobile ? '15% 5% 0 5%' : '0 8%', 
           opacity: section1Opacity, 
-          y: section1Y 
+          y: section1Y,
+          textAlign: isMobile ? 'center' : 'left'
         }}>
-          <h1 style={{ fontSize: '7rem', margin: '0 0 20px 0', lineHeight: '1', fontWeight: '900', letterSpacing: '-2px' }}>
+          <h1 style={{ fontSize: isMobile ? '4rem' : '7rem', margin: '0 0 20px 0', lineHeight: '1', fontWeight: '900', letterSpacing: '-2px' }}>
             Título de <br />
             <span style={{ background: 'linear-gradient(135deg, #FF7B00 0%, #FFB800 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Sección 1
             </span>
           </h1>
-          <p style={{ fontSize: '1.4rem', color: '#A0A0A0', maxWidth: '500px', marginTop: '20px', lineHeight: '1.6' }}>
+          <p style={{ fontSize: isMobile ? '1.1rem' : '1.4rem', color: '#A0A0A0', maxWidth: '500px', margin: isMobile ? '20px auto 0' : '20px 0 0', lineHeight: '1.6' }}>
             Este es un pequeño contenido descriptivo para la primera sección. Aquí puedes colocar la presentación de la bebida.
           </p>
           <div style={{ marginTop: '40px', color: '#FF7B00', letterSpacing: '2px', textTransform: 'uppercase' }}>
@@ -170,51 +179,56 @@ export default function LandingPage() {
         </motion.div>
         
         {/* Espacio vacío donde está la lata 3D en la sección 1 */}
-        <div style={{ flex: 1 }}></div>
+        <div style={{ flex: isMobile ? 1.5 : 1 }}></div>
       </div>
 
       {/* SECCIÓN 2 */}
-      <div className="snap-section" style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
-        <div style={{ flex: 1 }}></div>
+      <div className="snap-section" style={{ height: '100vh', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+        <div style={{ flex: isMobile ? 0 : 1 }}></div>
         <motion.div style={{ 
           flex: 1, 
-          padding: '0 8%', 
+          padding: isMobile ? '15% 5% 0 5%' : '0 8%', 
           opacity: section2Opacity, 
-          y: section2Y 
+          y: section2Y,
+          textAlign: isMobile ? 'center' : 'left'
         }}>
-          <h2 style={{ fontSize: '5rem', margin: '0 0 20px 0', lineHeight: '1', fontWeight: '800' }}>
+          <h2 style={{ fontSize: isMobile ? '3.5rem' : '5rem', margin: '0 0 20px 0', lineHeight: '1', fontWeight: '800' }}>
             Título de<br/>la Sección 2
           </h2>
-          <p style={{ fontSize: '1.3rem', color: '#A0A0A0', maxWidth: '400px', lineHeight: '1.6' }}>
+          <p style={{ fontSize: isMobile ? '1.1rem' : '1.3rem', color: '#A0A0A0', maxWidth: '400px', margin: isMobile ? '0 auto' : '0', lineHeight: '1.6' }}>
             Contenido de la segunda sección. Puedes usar este espacio para hablar sobre la fórmula, el sabor o la experiencia.
           </p>
         </motion.div>
+        {isMobile && <div style={{ flex: 1.5 }}></div>}
       </div>
 
       {/* SECCIÓN 3: ZOOM BRUTAL E INFO A LOS COSTADOS */}
-      <div className="snap-section" style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+      <div className="snap-section" style={{ height: '100vh', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', position: 'relative', zIndex: 10 }}>
         <motion.div style={{ 
-          flex: 1, 
-          padding: '0 8%', 
+          flex: isMobile ? 0 : 1, 
+          padding: isMobile ? '15% 5% 0 5%' : '0 8%', 
           opacity: section3Opacity, 
           y: section3Y,
-          textAlign: 'right'
+          textAlign: isMobile ? 'center' : 'right',
+          marginTop: isMobile ? '20px' : 0
         }}>
-          <h3 style={{ fontSize: '2rem', color: '#FF7B00', marginBottom: '10px' }}>Información 1</h3>
-          <p style={{ fontSize: '1.2rem', color: '#A0A0A0' }}>Detalle principal<br/>Dato importante<br/>Característica</p>
+          <h3 style={{ fontSize: isMobile ? '1.5rem' : '2rem', color: '#FF7B00', marginBottom: '10px' }}>Información 1</h3>
+          <p style={{ fontSize: isMobile ? '1rem' : '1.2rem', color: '#A0A0A0' }}>Detalle principal<br/>Dato importante<br/>Característica</p>
         </motion.div>
 
         {/* Espacio central donde está la lata GIGANTE */}
-        <div style={{ flex: 1 }}></div>
+        <div style={{ flex: isMobile ? 1 : 1, width: '100%' }}></div>
 
         <motion.div style={{ 
-          flex: 1, 
-          padding: '0 8%', 
+          flex: isMobile ? 0 : 1, 
+          padding: isMobile ? '0 5% 15% 5%' : '0 8%', 
           opacity: section3Opacity, 
-          y: section3Y 
+          y: section3Y,
+          textAlign: isMobile ? 'center' : 'left',
+          marginBottom: isMobile ? '20px' : 0
         }}>
-          <h3 style={{ fontSize: '2rem', color: '#FF7B00', marginBottom: '10px' }}>Información 2</h3>
-          <p style={{ fontSize: '1.2rem', color: '#A0A0A0' }}>Beneficio clave<br/>Dato extra<br/>Especificación</p>
+          <h3 style={{ fontSize: isMobile ? '1.5rem' : '2rem', color: '#FF7B00', marginBottom: '10px' }}>Información 2</h3>
+          <p style={{ fontSize: isMobile ? '1rem' : '1.2rem', color: '#A0A0A0' }}>Beneficio clave<br/>Dato extra<br/>Especificación</p>
         </motion.div>
       </div>
 
