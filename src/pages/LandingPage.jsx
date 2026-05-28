@@ -1,4 +1,4 @@
-import React, { Suspense, useRef } from 'react';
+import React, { Suspense, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Bounds, Html, useFBX, useTexture, Center, Environment } from '@react-three/drei';
 import * as THREE from 'three';
@@ -7,10 +7,10 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 function RotatingCan({ scrollYProgress }) {
   const fbx = useFBX('/monster-ultra-white/source/Monstercan_high.fbx');
 
-  const baseColor = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_BaseColo.png');
-  const normalMap = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Normal.1.png');
-  const metalnessMap = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Metallic.png');
-  const roughnessMap = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Roughnes.png');
+  const baseColor = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_BaseColo.webp');
+  const normalMap = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Normal.1.webp');
+  const metalnessMap = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Metallic.webp');
+  const roughnessMap = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Roughnes.webp');
 
   baseColor.colorSpace = THREE.SRGBColorSpace;
 
@@ -46,11 +46,6 @@ function RotatingCan({ scrollYProgress }) {
         targetScale = 1.5;
         rotX = 0.2;
         rotZ = -0.1;
-        
-        // Girar continuamente
-        isSpinning.current = true;
-        groupRef.current.rotation.y += delta * 1.5; // Velocidad de giro
-        targetRotYRef.current = groupRef.current.rotation.y;
       } else {
         // De Sección 2 a Sección 3
         let t = (scroll - 0.5) / 0.5; // normalizado de 0 a 1
@@ -59,15 +54,20 @@ function RotatingCan({ scrollYProgress }) {
         targetScale = THREE.MathUtils.lerp(1.5, 4.0, t); // Zoom brutal
         rotX = THREE.MathUtils.lerp(0.2, 0, t); // Se endereza
         rotZ = THREE.MathUtils.lerp(-0.1, 0, t); // Se endereza
-        
+      }
+
+      // Lógica de Giro (Sólo se detiene cuando llega casi por completo a la Sección 3)
+      if (scroll < 0.8) {
+        // Girar continuamente
+        isSpinning.current = true;
+        groupRef.current.rotation.y += delta * 1.5; // Velocidad de giro
+        targetRotYRef.current = groupRef.current.rotation.y;
+      } else {
         if (isSpinning.current) {
-          // Calcular el múltiplo de 2*PI más cercano y sumarle un offset para que muestre el logo.
-          // Si vemos la tabla nutricional en 0, el logo suele estar en Math.PI o -Math.PI.
-          // Prueba con Math.PI (media vuelta).
+          // Calcular el múltiplo de 2*PI más cercano y sumarle un offset
           const currentRot = targetRotYRef.current;
-          const frontOffset = Math.PI; // Ajusta este valor si el logo no queda exactamente al frente (ej. Math.PI/2)
+          const frontOffset = Math.PI; 
           
-          // Encontrar el múltiplo de 2*PI más cercano
           const twoPi = Math.PI * 2;
           const remainder = currentRot % twoPi;
           const base = currentRot - remainder;
@@ -101,6 +101,15 @@ function RotatingCan({ scrollYProgress }) {
 export default function LandingPage() {
   const containerRef = useRef();
   
+  useEffect(() => {
+    // Activar CSS Scroll Snapping en todo el documento al entrar
+    document.documentElement.classList.add('snap-html');
+    return () => {
+      // Limpiarlo al salir para no afectar otras páginas
+      document.documentElement.classList.remove('snap-html');
+    };
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
@@ -119,7 +128,7 @@ export default function LandingPage() {
   const section3Y = useTransform(scrollYProgress, [0.8, 1.0], [50, 0]);
 
   return (
-    <div ref={containerRef} style={{ width: '100vw', height: '300vh', background: '#0D0D0D', color: 'white', position: 'relative' }}>
+    <div className="debug-layout" ref={containerRef} style={{ width: '100vw', height: '300vh', background: '#0D0D0D', color: 'white', position: 'relative' }}>
       
       {/* 3D Canvas Fijo de fondo */}
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', zIndex: 0, pointerEvents: 'none' }}>
@@ -139,7 +148,7 @@ export default function LandingPage() {
       {/* Contenido HTML Scrolleable */}
       
       {/* SECCIÓN 1 */}
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+      <div className="snap-section" style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
         <motion.div style={{ 
           flex: 1, 
           padding: '0 8%', 
@@ -165,7 +174,7 @@ export default function LandingPage() {
       </div>
 
       {/* SECCIÓN 2 */}
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+      <div className="snap-section" style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
         <div style={{ flex: 1 }}></div>
         <motion.div style={{ 
           flex: 1, 
@@ -183,7 +192,7 @@ export default function LandingPage() {
       </div>
 
       {/* SECCIÓN 3: ZOOM BRUTAL E INFO A LOS COSTADOS */}
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+      <div className="snap-section" style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
         <motion.div style={{ 
           flex: 1, 
           padding: '0 8%', 

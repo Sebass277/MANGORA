@@ -9,25 +9,26 @@ export default function CanModel({ flavorColor, scrollProgress, isMobile }) {
   // Load the FBX geometry
   const fbx = useFBX('/monster-ultra-white/source/Monstercan_high.fbx');
 
-  // Load PBR Textures (assuming Surface 1 is the main can body)
-  const [baseColor, normalMap, metalnessMap, roughnessMap] = useTexture([
-    '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_BaseColo.png',
-    '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Normal.1.png',
-    '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Metallic.png',
-    '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Roughnes.png'
-  ]);
+  const texturesBody = useTexture({
+    map: '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_BaseColo.webp',
+    normalMap: '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Normal.1.webp',
+    roughnessMap: '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Roughnes.webp',
+    metalnessMap: '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Metallic.webp',
+  });
 
-  // Load secondary textures if needed (Surface 2, usually the metallic top/bottom)
-  const [baseColor2, normalMap2, metalnessMap2, roughnessMap2] = useTexture([
-    '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface2_BaseColo.png',
-    '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface2_Normal.1.png',
-    '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface2_Metallic.png',
-    '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface2_Roughnes.png'
-  ]);
+  const texturesTop = useTexture({
+    map: '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface2_BaseColo.webp',
+    normalMap: '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface2_Normal.1.webp',
+    roughnessMap: '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface2_Roughnes.webp',
+    metalnessMap: '/monster-ultra-white/textures/Monstercan_low_aiStandardSurface2_Metallic.webp',
+  });
 
   // Configure textures (flipY is often needed for FBX textures in Three.js)
   useMemo(() => {
-    const textures = [baseColor, normalMap, metalnessMap, roughnessMap, baseColor2, normalMap2, metalnessMap2, roughnessMap2];
+    const textures = [
+      texturesBody.map, texturesBody.normalMap, texturesBody.metalnessMap, texturesBody.roughnessMap, 
+      texturesTop.map, texturesTop.normalMap, texturesTop.metalnessMap, texturesTop.roughnessMap
+    ];
     textures.forEach(t => {
       t.wrapS = THREE.RepeatWrapping;
       t.wrapT = THREE.RepeatWrapping;

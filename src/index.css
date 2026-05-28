@@ -1,125 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
-
 :root {
-  --bg-dark: #0D0D0D;
-  --text-light: #F2F2F2;
+  --background: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  
+  /* Variables dinámicas inyectadas por JS */
   --accent-primary: #FF7B00;
   --accent-secondary: #FFB800;
-  --gradient-mango: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  /* Transición suave para cuando cambiamos el fondo o los acentos */
+  transition: background-color 1s ease, color 1s ease;
+}
+
+/* 
+  CLASE DE DEPURACIÓN 
+  Aplica un contorno a todos los elementos hijos para ver la estructura 
+*/
+.debug-layout * {
+  outline: 1px dashed rgba(255, 85, 0, 0.5) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
 }
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
-body {
-  font-family: 'Outfit', sans-serif;
-  background-color: var(--bg-dark);
-  color: var(--text-light);
-  overflow-x: hidden;
-  line-height: 1.6;
+/* Transiciones para gradientes y botones */
+.flavor-transition {
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 1rem;
+/* 
+  SCROLL SNAPPING 
+  Aplicado al html globalmente cuando estamos en la Landing Page
+*/
+.snap-html {
+  scroll-snap-type: y mandatory;
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
-button {
-  font-family: 'Outfit', sans-serif;
-  cursor: pointer;
-  border: none;
-  outline: none;
-}
-
-/* Glassmorphism utils */
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-}
-
-/* Button CTA */
-.btn-cta {
-  background: var(--gradient-mango);
-  color: #000;
-  font-weight: 800;
-  font-size: 1.1rem;
-  padding: 14px 32px;
-  border-radius: 50px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, background 1s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.btn-cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(255, 123, 0, 0.3);
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--text-light);
-  border: 2px solid var(--accent-primary);
-  font-weight: 600;
-  padding: 12px 28px;
-  border-radius: 50px;
-  transition: all 0.3s ease, border-color 1s ease;
-}
-
-.btn-outline:hover {
-  background: var(--accent-primary);
-  color: #000;
-}
-
-/* Text Gradients */
-.text-gradient {
-  background: var(--gradient-mango);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Floating animation */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-15px); }
-  100% { transform: translateY(0px); }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-/* Form inputs */
-input, select {
-  width: 100%;
-  padding: 14px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  color: white;
-  font-family: 'Outfit', sans-serif;
-  margin-bottom: 16px;
-  transition: border-color 0.3s ease;
-}
-
-input:focus, select:focus {
-  border-color: var(--accent-primary);
-  outline: none;
+.snap-section {
+  scroll-snap-align: start;
+  scroll-snap-stop: always; /* Obliga a parar en cada sección, no salta 2 a la vez */
 }
