@@ -1,6 +1,9 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, Suspense } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Canvas } from '@react-three/fiber';
+import { Environment, ContactShadows, Float } from '@react-three/drei';
+import CanModel from '../components/CanModel';
 
 const FLAVORS = [
   {
@@ -52,14 +55,12 @@ export default function LandingPage() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [currentFlavorIdx, setCurrentFlavorIdx] = useState(0);
   
-  // Responsive hook
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Flavor rotation hook
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentFlavorIdx((prev) => (prev + 1) % FLAVORS.length);
@@ -69,7 +70,6 @@ export default function LandingPage() {
 
   const flavor = FLAVORS[currentFlavorIdx];
 
-  // Inyectar variables CSS al root para transiciones suaves
   useEffect(() => {
     document.documentElement.style.setProperty('--accent-primary', flavor.primary);
     document.documentElement.style.setProperty('--accent-secondary', flavor.secondary);
@@ -80,21 +80,32 @@ export default function LandingPage() {
     offset: ["start start", "end end"]
   });
 
-  const canX = useTransform(scrollYProgress, [0, 0.5], [0, isMobile ? 0 : -300]); 
-  const canY = useTransform(scrollYProgress, [0, 0.5], [0, isMobile ? 0 : 400]); 
-  const canRotate = useTransform(scrollYProgress, [0, 0.5], [0, isMobile ? 0 : -60]); 
-  const canScale = useTransform(scrollYProgress, [0, 0.5], [1, isMobile ? 1 : 0.8]);
-
   const textOpacity = useTransform(scrollYProgress, [0.3, 0.5], [0, 1]);
   const textScale = useTransform(scrollYProgress, [0.3, 0.5], [0.8, 1]);
 
   return (
     <div className="landing-container" ref={containerRef} style={{ position: 'relative' }}>
       
+      {/* 3D Canvas Background for Section 1 and 2 */}
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', zIndex: 15, pointerEvents: 'none' }}>
+        <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[10, 10, 5]} intensity={1.5} color={flavor.primary} />
+          <directionalLight position={[-10, 10, -5]} intensity={1} />
+          <Environment preset="city" />
+          <Suspense fallback={null}>
+            <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
+              <CanModel flavorColor={flavor.primary} scrollProgress={scrollYProgress} isMobile={isMobile} />
+            </Float>
+            <ContactShadows position={[0, -2, 0]} opacity={0.5} scale={10} blur={2} far={4} />
+          </Suspense>
+        </Canvas>
+      </div>
+
       {/* Navbar */}
       <nav style={{ position: 'fixed', top: 0, width: '100%', padding: isMobile ? '16px 24px' : '24px 48px', zIndex: 100, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(13,13,13,0.8)', backdropFilter: 'blur(10px)' }}>
         <h2 style={{ fontSize: isMobile ? '20px' : '24px', letterSpacing: '4px', margin: 0, transition: 'color 1s ease' }} className="text-gradient">MANGORA</h2>
-        <button onClick={() => navigate('/checkout')} className="btn-outline" style={{ padding: isMobile ? '8px 16px' : '12px 28px', fontSize: isMobile ? '0.9rem' : '1rem' }}>Comprar</button>
+        <button onClick={() => navigate('/checkout')} className="btn-outline" style={{ padding: isMobile ? '8px 16px' : '12px 28px', fontSize: isMobile ? '0.9rem' : '1rem', pointerEvents: 'auto' }}>Comprar</button>
       </nav>
 
       {/* Wrapper Scroll */}
@@ -110,7 +121,7 @@ export default function LandingPage() {
           overflow: 'hidden' 
         }}>
           
-          {/* SECCIÓN 1: HERO */}
+          {/* SECCIÓN 1: HERO TEXTS */}
           <div style={{ 
             flex: 1, 
             minHeight: '100vh', 
@@ -154,7 +165,7 @@ export default function LandingPage() {
             )}
           </div>
 
-          {/* LATA Y SPLASH */}
+          {/* SPLASH BG Y ESPACIO PARA LATA 3D */}
           <div style={{ 
             flex: 1, 
             minHeight: isMobile ? '60vh' : '100vh',
@@ -162,9 +173,8 @@ export default function LandingPage() {
             alignItems: 'center', 
             justifyContent: 'center', 
             position: 'relative',
-            zIndex: 20
+            zIndex: 5 // Behind 3D canvas
           }}>
-            {/* Splash BG (Color adaptativo con hue-rotate) */}
             <img src="/splash_bg.png" alt="Splash" style={{ 
               position: 'absolute', 
               width: isMobile ? '150%' : '120%', 
@@ -175,22 +185,6 @@ export default function LandingPage() {
               filter: `hue-rotate(${flavor.hue})`,
               transition: 'filter 1s ease'
             }} />
-            
-            <motion.img 
-              src="/MANGORA frontal.png" 
-              alt="Lata MANGORA"
-              style={{ 
-                height: isMobile ? '50vh' : '70vh', 
-                objectFit: 'contain', 
-                zIndex: 20,
-                x: canX,
-                y: canY,
-                rotate: canRotate,
-                scale: canScale,
-                filter: `drop-shadow(0 20px 30px rgba(0,0,0,0.8)) hue-rotate(${flavor.hue})`,
-                transition: 'filter 1s ease' // Suave transición de color para la lata
-              }}
-            />
           </div>
         </div>
 

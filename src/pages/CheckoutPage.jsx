@@ -44,9 +44,9 @@ export default function CheckoutPage() {
           {/* Lógica de Regalos */}
           <div style={{ minHeight: '150px' }}>
             {packCount >= 2 && (
-              <div style={{ background: 'rgba(255, 123, 0, 0.1)', border: '1px solid var(--accent-orange)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+              <div style={{ background: 'rgba(255, 123, 0, 0.1)', border: '1px solid var(--accent-primary)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                  <Gift color="var(--accent-orange)" size={24} style={{ marginTop: '2px' }} />
+                  <Gift color="var(--accent-primary)" size={24} style={{ marginTop: '2px' }} />
                   <div>
                     <h4 className="text-gradient" style={{ margin: 0, fontSize: '1.1rem' }}>
                       {packCount >= 4 ? '¡Súper Combo Desbloqueado!' : '¡Regalo Desbloqueado!'}
@@ -54,13 +54,13 @@ export default function CheckoutPage() {
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
                       <span style={{ color: '#E0E0E0' }}>2x Vasos Grabados o con DTF</span>
-                      <span style={{ color: 'var(--accent-orange)', fontWeight: 'bold' }}>S/ 0.00</span>
+                      <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>S/ 0.00</span>
                     </div>
 
                     {packCount >= 4 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                         <span style={{ color: '#E0E0E0' }}>1x Polo Oficial MANGORA</span>
-                        <span style={{ color: 'var(--accent-orange)', fontWeight: 'bold' }}>S/ 0.00</span>
+                        <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>S/ 0.00</span>
                       </div>
                     )}
                   </div>
@@ -90,8 +90,8 @@ export default function CheckoutPage() {
 
             <h2 style={{ fontSize: '1.5rem', marginTop: '32px', marginBottom: '16px' }}>Método de Pago</h2>
             <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
-              <div style={{ flex: 1, padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid var(--accent-orange)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                <CreditCard size={20} color="var(--accent-orange)" />
+              <div style={{ flex: 1, padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                <CreditCard size={20} color="var(--accent-primary)" />
                 <span style={{ fontWeight: '600' }}>Tarjeta</span>
               </div>
               <div style={{ flex: 1, padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', opacity: 0.5 }}>
