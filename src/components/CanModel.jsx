@@ -102,7 +102,7 @@ export default function CanModel({ flavorColor, scrollProgress, isMobile }) {
   });
 
   return (
-    <group ref={groupRef} position={[0, -1, 0]} scale={[0.1, 0.1, 0.1]}>
+    <group ref={groupRef}>
       <primitive object={fbx} />
     </group>
   );

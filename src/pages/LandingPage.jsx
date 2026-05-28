@@ -1,295 +1,214 @@
-import React, { useRef, useState, useEffect, Suspense } from 'react';
+import React, { Suspense, useRef } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Bounds, Html, useFBX, useTexture, Center, Environment } from '@react-three/drei';
+import * as THREE from 'three';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Canvas } from '@react-three/fiber';
-import { Environment, ContactShadows, Float } from '@react-three/drei';
-import CanModel from '../components/CanModel';
 
-const FLAVORS = [
-  {
-    id: 'mango',
-    name: 'Mango',
-    primary: '#FF7B00',
-    secondary: '#FF2A00',
-    hue: '0deg',
-    title: 'El sabor tropical',
-    desc: 'Un cóctel artesanal premium. La dulzura vibrante del mango seleccionado, fusionada a la perfección con la intensidad de nuestro mejor ron.',
-    notes: 'Notas cítricas y dulces'
-  },
-  {
-    id: 'maracuya',
-    name: 'Maracuyá',
-    primary: '#FFD700',
-    secondary: '#FF9D00',
-    hue: '30deg',
-    title: 'La pasión exótica',
-    desc: 'La acidez perfecta del maracuyá fresco, balanceada con notas cálidas para una explosión de sabor inigualable.',
-    notes: 'Notas intensas y exóticas'
-  },
-  {
-    id: 'limon',
-    name: 'Limón',
-    primary: '#00FF40',
-    secondary: '#A6FF00',
-    hue: '90deg',
-    title: 'El golpe refrescante',
-    desc: 'Cítrico, atrevido y absolutamente refrescante. Limones seleccionados a mano para despertar todos tus sentidos.',
-    notes: 'Notas ácidas y vibrantes'
-  },
-  {
-    id: 'fresa',
-    name: 'Fresa',
-    primary: '#FF0040',
-    secondary: '#990000',
-    hue: '-30deg',
-    title: 'La dulzura intensa',
-    desc: 'El encanto salvaje de las fresas maduras mezclado con la fuerza del ron. Un sabor profundo y cautivador.',
-    notes: 'Notas rojas y profundas'
-  }
-];
+function RotatingCan({ scrollYProgress }) {
+  const fbx = useFBX('/monster-ultra-white/source/Monstercan_high.fbx');
+
+  const baseColor = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_BaseColo.png');
+  const normalMap = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Normal.1.png');
+  const metalnessMap = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Metallic.png');
+  const roughnessMap = useTexture('/monster-ultra-white/textures/Monstercan_low_aiStandardSurface1_Roughnes.png');
+
+  baseColor.colorSpace = THREE.SRGBColorSpace;
+
+  fbx.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({
+        map: baseColor,
+        normalMap: normalMap,
+        metalnessMap: metalnessMap,
+        roughnessMap: roughnessMap,
+        color: 0xffffff,
+        envMapIntensity: 1.5
+      });
+    }
+  });
+
+  const groupRef = useRef();
+  
+  const targetRotYRef = useRef(0);
+  const isSpinning = useRef(true);
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      const scroll = scrollYProgress.get();
+      
+      let targetX, targetY, targetScale, rotX, rotZ;
+
+      if (scroll < 0.5) {
+        // De Sección 1 a Sección 2
+        let t = scroll / 0.5; // normalizado de 0 a 1
+        targetX = THREE.MathUtils.lerp(3, -3, t);
+        targetY = -2;
+        targetScale = 1.5;
+        rotX = 0.2;
+        rotZ = -0.1;
+        
+        // Girar continuamente
+        isSpinning.current = true;
+        groupRef.current.rotation.y += delta * 1.5; // Velocidad de giro
+        targetRotYRef.current = groupRef.current.rotation.y;
+      } else {
+        // De Sección 2 a Sección 3
+        let t = (scroll - 0.5) / 0.5; // normalizado de 0 a 1
+        targetX = THREE.MathUtils.lerp(-3, 0, t);
+        targetY = THREE.MathUtils.lerp(-2, -4, t); // Baja un poco para centrar el logo al hacer zoom
+        targetScale = THREE.MathUtils.lerp(1.5, 4.0, t); // Zoom brutal
+        rotX = THREE.MathUtils.lerp(0.2, 0, t); // Se endereza
+        rotZ = THREE.MathUtils.lerp(-0.1, 0, t); // Se endereza
+        
+        if (isSpinning.current) {
+          // Calcular el múltiplo de 2*PI más cercano y sumarle un offset para que muestre el logo.
+          // Si vemos la tabla nutricional en 0, el logo suele estar en Math.PI o -Math.PI.
+          // Prueba con Math.PI (media vuelta).
+          const currentRot = targetRotYRef.current;
+          const frontOffset = Math.PI; // Ajusta este valor si el logo no queda exactamente al frente (ej. Math.PI/2)
+          
+          // Encontrar el múltiplo de 2*PI más cercano
+          const twoPi = Math.PI * 2;
+          const remainder = currentRot % twoPi;
+          const base = currentRot - remainder;
+          
+          let closestSnap = remainder > Math.PI ? base + twoPi : base;
+          targetRotYRef.current = closestSnap + frontOffset;
+          isSpinning.current = false;
+        }
+        
+        // Transicionar suavemente hacia la pose frontal
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRotYRef.current, 0.1);
+      }
+
+      // Aplicar transformaciones suavemente
+      groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetX, 0.1);
+      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetY, 0.1);
+      groupRef.current.scale.setScalar(THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, 0.1));
+      
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, rotX, 0.1);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, rotZ, 0.1);
+    }
+  });
+
+  return (
+    <group ref={groupRef}>
+      <primitive object={fbx} />
+    </group>
+  );
+}
 
 export default function LandingPage() {
-  const navigate = useNavigate();
-  const containerRef = useRef(null);
+  const containerRef = useRef();
   
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [currentFlavorIdx, setCurrentFlavorIdx] = useState(0);
-  
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentFlavorIdx((prev) => (prev + 1) % FLAVORS.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const flavor = FLAVORS[currentFlavorIdx];
-
-  useEffect(() => {
-    document.documentElement.style.setProperty('--accent-primary', flavor.primary);
-    document.documentElement.style.setProperty('--accent-secondary', flavor.secondary);
-  }, [flavor]);
-
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
   });
 
-  const textOpacity = useTransform(scrollYProgress, [0.3, 0.5], [0, 1]);
-  const textScale = useTransform(scrollYProgress, [0.3, 0.5], [0.8, 1]);
+  // Animaciones para HTML (Sección 1)
+  const section1Opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  const section1Y = useTransform(scrollYProgress, [0, 0.2], [0, -50]);
+
+  // Animaciones para HTML (Sección 2)
+  const section2Opacity = useTransform(scrollYProgress, [0.3, 0.5, 0.7], [0, 1, 0]);
+  const section2Y = useTransform(scrollYProgress, [0.3, 0.5, 0.7], [50, 0, -50]);
+
+  // Animaciones para HTML (Sección 3)
+  const section3Opacity = useTransform(scrollYProgress, [0.8, 1.0], [0, 1]);
+  const section3Y = useTransform(scrollYProgress, [0.8, 1.0], [50, 0]);
 
   return (
-    <div className="landing-container" ref={containerRef} style={{ position: 'relative' }}>
+    <div ref={containerRef} style={{ width: '100vw', height: '300vh', background: '#0D0D0D', color: 'white', position: 'relative' }}>
       
-      {/* 3D Canvas Background for Section 1 and 2 */}
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', zIndex: 15, pointerEvents: 'none' }}>
-        <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[10, 10, 5]} intensity={1.5} color={flavor.primary} />
-          <directionalLight position={[-10, 10, -5]} intensity={1} />
-          <Environment preset="city" />
-          <Suspense fallback={null}>
-            <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
-              <CanModel flavorColor={flavor.primary} scrollProgress={scrollYProgress} isMobile={isMobile} />
-            </Float>
-            <ContactShadows position={[0, -2, 0]} opacity={0.5} scale={10} blur={2} far={4} />
+      {/* 3D Canvas Fijo de fondo */}
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', zIndex: 0, pointerEvents: 'none' }}>
+        <Canvas camera={{ position: [0, 0, 12], fov: 45 }}>
+          <ambientLight intensity={0.7} color="#fff0e0" />
+          <directionalLight position={[10, 10, 5]} intensity={2.5} color="#FF5500" />
+          <directionalLight position={[-10, 5, -5]} intensity={1.5} color="#FF0040" />
+          <directionalLight position={[0, -10, 5]} intensity={1} color="#FFD700" />
+          <Environment preset="sunset" />
+
+          <Suspense fallback={<Html center><div style={{color:'white'}}>Cargando lata...</div></Html>}>
+            <RotatingCan scrollYProgress={scrollYProgress} />
           </Suspense>
         </Canvas>
       </div>
 
-      {/* Navbar */}
-      <nav style={{ position: 'fixed', top: 0, width: '100%', padding: isMobile ? '16px 24px' : '24px 48px', zIndex: 100, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(13,13,13,0.8)', backdropFilter: 'blur(10px)' }}>
-        <h2 style={{ fontSize: isMobile ? '20px' : '24px', letterSpacing: '4px', margin: 0, transition: 'color 1s ease' }} className="text-gradient">MANGORA</h2>
-        <button onClick={() => navigate('/checkout')} className="btn-outline" style={{ padding: isMobile ? '8px 16px' : '12px 28px', fontSize: isMobile ? '0.9rem' : '1rem', pointerEvents: 'auto' }}>Comprar</button>
-      </nav>
-
-      {/* Wrapper Scroll */}
-      <div style={{ height: isMobile ? 'auto' : '200vh', position: 'relative' }}>
-        
-        {/* SECCIÓN 1 Y 2 */}
-        <div style={{ 
-          position: isMobile ? 'relative' : 'sticky', 
-          top: 0, 
-          height: isMobile ? 'auto' : '100vh', 
-          display: 'flex', 
-          flexDirection: isMobile ? 'column' : 'row',
-          overflow: 'hidden' 
+      {/* Contenido HTML Scrolleable */}
+      
+      {/* SECCIÓN 1 */}
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+        <motion.div style={{ 
+          flex: 1, 
+          padding: '0 8%', 
+          opacity: section1Opacity, 
+          y: section1Y 
         }}>
-          
-          {/* SECCIÓN 1: HERO TEXTS */}
-          <div style={{ 
-            flex: 1, 
-            minHeight: '100vh', 
-            position: 'relative', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'center',
-            padding: isMobile ? '120px 24px 60px' : '0 8%',
-            zIndex: 10
-          }}>
-            <AnimatePresence mode="wait">
-              <motion.h1 
-                key={flavor.title}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.5 }}
-                style={{ fontSize: isMobile ? '3rem' : '4.5rem', marginBottom: '24px', lineHeight: '1.1' }}
-              >
-                {flavor.title} <br/><span className="text-gradient">hecho leyenda</span>
-              </motion.h1>
-            </AnimatePresence>
-
-            <AnimatePresence mode="wait">
-              <motion.p 
-                key={flavor.desc}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-                style={{ fontSize: '1.2rem', color: '#A0A0A0', maxWidth: '400px', marginBottom: '40px' }}
-              >
-                {flavor.desc}
-              </motion.p>
-            </AnimatePresence>
-
-            {!isMobile && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }}>
-                <p style={{ color: 'var(--accent-primary)', fontSize: '0.9rem', letterSpacing: '2px', textTransform: 'uppercase', transition: 'color 1s ease' }}>↓ Haz scroll para descubrir</p>
-              </motion.div>
-            )}
-          </div>
-
-          {/* SPLASH BG Y ESPACIO PARA LATA 3D */}
-          <div style={{ 
-            flex: 1, 
-            minHeight: isMobile ? '60vh' : '100vh',
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            position: 'relative',
-            zIndex: 5 // Behind 3D canvas
-          }}>
-            <img src="/splash_bg.png" alt="Splash" style={{ 
-              position: 'absolute', 
-              width: isMobile ? '150%' : '120%', 
-              maxWidth: '800px', 
-              opacity: 0.6,
-              mixBlendMode: 'screen',
-              zIndex: 0,
-              filter: `hue-rotate(${flavor.hue})`,
-              transition: 'filter 1s ease'
-            }} />
-          </div>
-        </div>
-
-        {/* SECCIÓN 2: EL SERVIDO */}
-        {!isMobile && (
-          <div style={{ 
-            position: 'absolute', 
-            top: '100vh', 
-            left: 0, 
-            width: '100%', 
-            height: '100vh', 
-            display: 'flex', 
-            alignItems: 'center', 
-            padding: '0 8%',
-            pointerEvents: 'none'
-          }}>
-            <div style={{ flex: 1, position: 'relative', display: 'flex', justifyContent: 'center' }}>
-              
-              <img src="/vaso_mangora.png" alt="Vaso MANGORA" style={{ 
-                height: '50vh', 
-                objectFit: 'contain',
-                position: 'relative',
-                top: '100px',
-                zIndex: 10
-              }} />
-
-              {/* Textos Flotantes */}
-              <motion.div style={{ position: 'absolute', left: '10%', top: '20%', opacity: textOpacity, scale: textScale, color: 'var(--accent-secondary)', fontSize: '1.5rem', fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.5)', transition: 'color 1s ease' }}>
-                Rinde hasta 2 Vasos
-              </motion.div>
-              <motion.div style={{ position: 'absolute', right: '10%', bottom: '20%', opacity: textOpacity, scale: textScale, color: 'var(--accent-primary)', fontSize: '1.5rem', fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.5)', transition: 'color 1s ease' }}>
-                {flavor.notes}
-              </motion.div>
-
-            </div>
-            <div style={{ flex: 1 }}></div>
-          </div>
-        )}
-      </div>
-
-      {/* SECCIÓN 3: OFERTA FINAL */}
-      <div style={{ 
-        minHeight: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        position: 'relative', 
-        zIndex: 30,
-        padding: isMobile ? '60px 24px' : '48px',
-        background: 'linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.02))'
-      }}>
-        <div className="glass-panel" style={{ 
-          padding: isMobile ? '32px 24px' : '64px', 
-          textAlign: 'center', 
-          maxWidth: '900px', 
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center'
-        }}>
-          <h2 style={{ fontSize: isMobile ? '2rem' : '3rem', marginBottom: '16px' }}>Mix Pack 4 Sabores</h2>
-          <p style={{ color: '#A0A0A0', marginBottom: '48px', fontSize: '1.1rem', maxWidth: '500px' }}>
-            Prueba todos nuestros sabores (Mango, Maracuyá, Limón y Fresa) en un solo pack. Pide ahora y desbloquea regalos exclusivos.
+          <h1 style={{ fontSize: '7rem', margin: '0 0 20px 0', lineHeight: '1', fontWeight: '900', letterSpacing: '-2px' }}>
+            Título de <br />
+            <span style={{ background: 'linear-gradient(135deg, #FF7B00 0%, #FFB800 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Sección 1
+            </span>
+          </h1>
+          <p style={{ fontSize: '1.4rem', color: '#A0A0A0', maxWidth: '500px', marginTop: '20px', lineHeight: '1.6' }}>
+            Este es un pequeño contenido descriptivo para la primera sección. Aquí puedes colocar la presentación de la bebida.
           </p>
-          
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: isMobile ? 'column' : 'row',
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            gap: isMobile ? '32px' : '48px',
-            marginBottom: '48px',
-            width: '100%'
-          }}>
-            
-            <div style={{ textAlign: 'center' }}>
-              <img src="/polo_mangora.png" alt="Polo Oficial" style={{ height: '200px', objectFit: 'contain', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))' }} />
-              <p style={{ color: 'var(--accent-primary)', fontWeight: 600, marginTop: '16px', transition: 'color 1s ease' }}>+ 1 Polo Oficial</p>
-            </div>
-
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-              <img src="/MANGORA frontal.png" alt="Pack Mix" style={{ height: '280px', objectFit: 'contain', zIndex: 3, filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.8)) hue-rotate(0deg)' }} />
-              <img src="/MANGORA etiqueta.png" alt="Etiqueta Fresa" style={{ height: '240px', objectFit: 'contain', position: 'absolute', left: '-60px', top: '20px', zIndex: 1, opacity: 0.8, filter: 'blur(1px) hue-rotate(-30deg)' }} />
-              <img src="/MANGORA etiqueta.png" alt="Etiqueta Limon" style={{ height: '240px', objectFit: 'contain', position: 'absolute', right: '-60px', top: '20px', zIndex: 1, opacity: 0.8, filter: 'blur(1px) hue-rotate(90deg)' }} />
-              <img src="/MANGORA etiqueta.png" alt="Etiqueta Maracuya" style={{ height: '260px', objectFit: 'contain', position: 'absolute', right: '-30px', top: '10px', zIndex: 2, opacity: 0.9, filter: 'blur(1px) hue-rotate(30deg)' }} />
-            </div>
-
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '-20px' }}>
-                <img src="/vaso_mangora.png" alt="Vasos" style={{ height: '180px', objectFit: 'contain', marginRight: '-40px', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))' }} />
-                <img src="/vaso_mangora.png" alt="Vasos" style={{ height: '180px', objectFit: 'contain', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))' }} />
-              </div>
-              <p style={{ color: 'var(--accent-primary)', fontWeight: 600, marginTop: '16px', transition: 'color 1s ease' }}>+ 2 Vasos Grabados</p>
-            </div>
-
+          <div style={{ marginTop: '40px', color: '#FF7B00', letterSpacing: '2px', textTransform: 'uppercase' }}>
+            ↓ Haz scroll
           </div>
-
-          <div style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '8px' }}>Mix Pack 4 Latas</div>
-          <div className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '32px' }}>S/ 48.00</div>
-
-          <button className="btn-cta" style={{ padding: '18px 48px', fontSize: '1.2rem' }} onClick={() => navigate('/checkout')}>
-            Comprar Ahora
-          </button>
-        </div>
+        </motion.div>
+        
+        {/* Espacio vacío donde está la lata 3D en la sección 1 */}
+        <div style={{ flex: 1 }}></div>
       </div>
+
+      {/* SECCIÓN 2 */}
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+        <div style={{ flex: 1 }}></div>
+        <motion.div style={{ 
+          flex: 1, 
+          padding: '0 8%', 
+          opacity: section2Opacity, 
+          y: section2Y 
+        }}>
+          <h2 style={{ fontSize: '5rem', margin: '0 0 20px 0', lineHeight: '1', fontWeight: '800' }}>
+            Título de<br/>la Sección 2
+          </h2>
+          <p style={{ fontSize: '1.3rem', color: '#A0A0A0', maxWidth: '400px', lineHeight: '1.6' }}>
+            Contenido de la segunda sección. Puedes usar este espacio para hablar sobre la fórmula, el sabor o la experiencia.
+          </p>
+        </motion.div>
+      </div>
+
+      {/* SECCIÓN 3: ZOOM BRUTAL E INFO A LOS COSTADOS */}
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}>
+        <motion.div style={{ 
+          flex: 1, 
+          padding: '0 8%', 
+          opacity: section3Opacity, 
+          y: section3Y,
+          textAlign: 'right'
+        }}>
+          <h3 style={{ fontSize: '2rem', color: '#FF7B00', marginBottom: '10px' }}>Información 1</h3>
+          <p style={{ fontSize: '1.2rem', color: '#A0A0A0' }}>Detalle principal<br/>Dato importante<br/>Característica</p>
+        </motion.div>
+
+        {/* Espacio central donde está la lata GIGANTE */}
+        <div style={{ flex: 1 }}></div>
+
+        <motion.div style={{ 
+          flex: 1, 
+          padding: '0 8%', 
+          opacity: section3Opacity, 
+          y: section3Y 
+        }}>
+          <h3 style={{ fontSize: '2rem', color: '#FF7B00', marginBottom: '10px' }}>Información 2</h3>
+          <p style={{ fontSize: '1.2rem', color: '#A0A0A0' }}>Beneficio clave<br/>Dato extra<br/>Especificación</p>
+        </motion.div>
+      </div>
+
     </div>
   );
 }
