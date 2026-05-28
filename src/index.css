@@ -3,9 +3,9 @@
 :root {
   --bg-dark: #0D0D0D;
   --text-light: #F2F2F2;
-  --accent-orange: #FF7B00;
-  --accent-yellow: #FFB800;
-  --gradient-mango: linear-gradient(135deg, var(--accent-orange) 0%, var(--accent-yellow) 100%);
+  --accent-primary: #FF7B00;
+  --accent-secondary: #FFB800;
+  --gradient-mango: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
 }
@@ -59,7 +59,7 @@ button {
   font-size: 1.1rem;
   padding: 14px 32px;
   border-radius: 50px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 1s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -75,15 +75,15 @@ button {
 .btn-outline {
   background: transparent;
   color: var(--text-light);
-  border: 2px solid var(--accent-orange);
+  border: 2px solid var(--accent-primary);
   font-weight: 600;
   padding: 12px 28px;
   border-radius: 50px;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease, border-color 1s ease;
 }
 
 .btn-outline:hover {
-  background: var(--accent-orange);
+  background: var(--accent-primary);
   color: #000;
 }
 
@@ -120,6 +120,6 @@ input, select {
 }
 
 input:focus, select:focus {
-  border-color: var(--accent-orange);
+  border-color: var(--accent-primary);
   outline: none;
 }

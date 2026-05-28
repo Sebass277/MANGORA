@@ -29,7 +29,7 @@ export default function CheckoutPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <img src="/MANGORA frontal.png" alt="Pack MANGORA" style={{ width: '60px', height: '60px', objectFit: 'contain' }} />
               <div>
-                <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Paquete de 4 Latas MANGORA</h3>
+                <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Mix Pack 4 Sabores MANGORA</h3>
                 <p style={{ color: '#A0A0A0', margin: 0 }}>S/ {basePrice.toFixed(2)} c/u</p>
               </div>
             </div>
